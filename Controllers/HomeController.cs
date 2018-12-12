@@ -18,46 +18,14 @@ namespace Ade.Tools.Controllers
             this.Configuration = configuration;
         }
 
-        public IActionResult Index()
+        public static DateTime StartTime { get; set; } = DateTime.MinValue;
+
+        public JsonResult Start()
         {
-            //int buffer = 1024 * 10;
-
-            //byte[] byteData = new byte[buffer];
-
-            //string generalLogPath = Configuration["MySqlProfiler:GeneralLogPath"];
-            //string slowLogPath = Configuration["MySqlProfiler:SlowLogPath"];
-
-            //var fileNameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(generalLogPath);
-            //var desFileName = generalLogPath.Replace(fileNameWithoutExt, fileNameWithoutExt + "_Copy");
-            //System.IO.File.Copy(generalLogPath, desFileName);
-
-            //using (FileStream fs = System.IO.File.OpenRead(desFileName))
-            //{
-            //    fs.Seek(fs.Length - buffer, SeekOrigin.Begin);
-
-            //    fs.Read(byteData, 0, buffer);
-            //}
-
-            //System.IO.File.Delete(desFileName);
-
-            //var clippedStrs = System.Text.Encoding.Default.GetString(byteData);
-
-            //string regexPattern = "[0-9]{4}-[0,1,2]{1}[0-9]{1}-[0,1,2]{1}[0-9]{1}T[0,1,2]{1}[0-9]{1}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}.[0-9]{6}Z";  
-
-            //var lines = Regex.Split(clippedStrs, regexPattern).Skip(1).Reverse().ToList();
-
-            //string tempLine = string.Empty;
-
-            //foreach (var line in lines)
-            //{
-            //    tempLine = Regex.Replace(line, @"[0-9]*\s*Query\s*", string.Empty);
-
-            //    if (tempLine.Contains("mice"))
-            //    {
-            //        querys.Add(tempLine);
-            //    }
-            //}
-
+            if (StartTime == DateTime.MinValue)
+            {
+                StartTime = DateTime.Now;
+            }
 
             int size = int.Parse(Configuration["Size"]);
             string connStr = Configuration["Sql:DefaultConnection"];
@@ -67,8 +35,8 @@ namespace Ade.Tools.Controllers
 
             MySql.Data.MySqlClient.MySqlConnection mySqlConnection = new MySql.Data.MySqlClient.MySqlConnection(connStr);
 
-            string sqlStart = "set global log_output='table';set global general_log=on; repair table mysql.general_log;";
-            Dapper.SqlMapper.Execute(mySqlConnection, sqlStart);
+            //string sqlStart = "set global log_output='table';set global general_log=on; repair table mysql.general_log;";
+            //Dapper.SqlMapper.Execute(mySqlConnection, sqlStart);
 
 
             string sqlTables = "SELECT distinct TABLE_NAME FROM information_schema.columns";
@@ -86,16 +54,17 @@ namespace Ade.Tools.Controllers
             }
 
 
-
             //  WHERE table_schema='mice'
             List<string> tableNames = Dapper.SqlMapper.Query<string>(mySqlConnection, sqlTables).ToList();
 
 
-            List<LogItemDTO> logItemDTOs = Dapper.SqlMapper.Query<LogItemDTO>(mySqlConnection, $" select * from mysql.general_log order by event_time desc limit {size} ").ToList();
+            List<LogItemDTO> logItemDTOs = Dapper.SqlMapper.Query<LogItemDTO>(mySqlConnection, $" select * from mysql.general_log " +
+                //$"where event_time>'{StartTime.ToString("yyyy-MM-dd HH:mm:ss")}' " +
+                $"order by event_time desc limit {size} ").ToList();
 
             List<LogItem> logItems = new List<LogItem>();
 
-            logItemDTOs.ForEach(e=> {
+            logItemDTOs.ForEach(e => {
                 LogItem logItem = new LogItem()
                 {
                     Time = e.event_time,
@@ -114,8 +83,11 @@ namespace Ade.Tools.Controllers
                 }
             });
 
-            ViewBag.Logs = logItems;
+            return new JsonResult(logItems);
+        }
 
+        public IActionResult Index()
+        {
             return View();
         }
     }
