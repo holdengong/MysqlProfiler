@@ -3,3 +3,6 @@
 ################################################################################
 
 /.vs/MysqlProfiler/v15/Server/sqlite3
+/.vs/MysqlProfiler/v15
+/bin
+/obj
