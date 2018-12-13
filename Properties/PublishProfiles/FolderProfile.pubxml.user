@@ -6,6 +6,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <TimeStampOfAssociatedLegacyPublishXmlFile />
-    <EncryptedPassword />
+    <_PublishTargetUrl>C:\GitRepository\MysqlProfiler\bin\Release\netcoreapp2.1\publish\</_PublishTargetUrl>
   </PropertyGroup>
 </Project>
