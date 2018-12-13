@@ -78,6 +78,33 @@ namespace Ade.Tools.Controllers
             return new JsonResult(logItems);
         }
 
+        public JsonResult Slow()
+        {
+            List<SlowQuery> slowQueries = new List<SlowQuery>();
+            using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
+            {
+                string sql = "select * from mysql.slow_log order by query_time desc";
+                List<SlowQueryDTO> slowDtos = Dapper.SqlMapper.Query<SlowQueryDTO>(mySqlConnection, sql).ToList();
+
+                slowDtos.ForEach(e => {
+                    slowQueries.Add(new SlowQuery()
+                    {
+                        DB = e.db,
+                        LockTime = DateTime.Parse(e.lock_time.ToString()).ToString("HH:mm:ss.fffff"),
+                        QueryTime = DateTime.Parse(e.query_time.ToString()).ToString("HH:mm:ss.fffff"),
+                        RowsExamined = e.rows_examined,
+                        RowsSent = e.rows_sent,
+                        Sql = System.Text.Encoding.Default.GetString( (byte[])e.sql_text),
+                        StartTime = e.start_time.ToString("yyyy-MM-dd HH:mm:ss"),
+                        UserHost = e.user_host
+                    });
+                });
+
+            }
+
+            return new JsonResult(slowQueries);
+        }
+
         public string On()
         {
             using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
