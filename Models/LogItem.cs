@@ -8,7 +8,7 @@ namespace Ade.Tools.Models
 {
     public class LogItem
     {
-        public DateTime Time { get; set; }
+        public string Time { get; set; }
         public string UserHost { get; set; }
         public long ThreadId { get; set; }
         public int ServerId { get; set; }

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using MySql.Data.MySqlClient;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Ade.Tools.Controllers
 {
@@ -16,9 +18,13 @@ namespace Ade.Tools.Controllers
         public HomeController(IConfiguration configuration)
         {
             this.Configuration = configuration;
+
+            this.ConnStr = Configuration["Sql:DefaultConnection"];
         }
 
         public static DateTime StartTime { get; set; } = DateTime.MinValue;
+        public static List<string> TableNames { get; set; }
+        public string ConnStr { get; set; }
 
         public JsonResult Start()
         {
@@ -28,46 +34,31 @@ namespace Ade.Tools.Controllers
             }
 
             int size = int.Parse(Configuration["Size"]);
-            string connStr = Configuration["Sql:DefaultConnection"];
 
-            string[] traceDbs = Configuration["TraceDatabaseNames"].Split(",");
             string[] blackList = Configuration["Blacklist"].Split(",");
 
-            MySql.Data.MySqlClient.MySqlConnection mySqlConnection = new MySql.Data.MySqlClient.MySqlConnection(connStr);
-
-            //string sqlStart = "set global log_output='table';set global general_log=on; repair table mysql.general_log;";
-            //Dapper.SqlMapper.Execute(mySqlConnection, sqlStart);
-
-
-            string sqlTables = "SELECT distinct TABLE_NAME FROM information_schema.columns";
-
-            foreach (var db in traceDbs)
-            {
-                if (!sqlTables.Contains("WHERE"))
-                {
-                    sqlTables += " WHERE table_schema='" + db + "'";
-                }
-                else
-                {
-                    sqlTables += " OR table_schema='" + db + "'";
-                }
-            }
-
-
-            //  WHERE table_schema='mice'
-            List<string> tableNames = Dapper.SqlMapper.Query<string>(mySqlConnection, sqlTables).ToList();
-
-
-            List<LogItemDTO> logItemDTOs = Dapper.SqlMapper.Query<LogItemDTO>(mySqlConnection, $" select * from mysql.general_log " +
-                //$"where event_time>'{StartTime.ToString("yyyy-MM-dd HH:mm:ss")}' " +
-                $"order by event_time desc limit {size} ").ToList();
+            List<string> tableNames = GetTableNames();
 
             List<LogItem> logItems = new List<LogItem>();
+            List<LogItemDTO> logItemDTOs = new List<LogItemDTO>();
 
-            logItemDTOs.ForEach(e => {
+            using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
+            {
+                //string sqlStart = "set global log_output='table';set global general_log=on; repair table mysql.general_log;";
+                //Dapper.SqlMapper.Execute(mySqlConnection, sqlStart);
+
+                logItemDTOs = Dapper.SqlMapper.Query<LogItemDTO>(mySqlConnection, $" select * from mysql.general_log " +
+                     $"where event_time>'{StartTime.ToString("yyyy-MM-dd HH:mm:ss")}' " +
+                     $"order by event_time desc ")
+                     //+ $"limit {size} "
+                     .ToList();
+            }
+
+            logItemDTOs.ForEach(e =>
+            {
                 LogItem logItem = new LogItem()
                 {
-                    Time = e.event_time,
+                    Time = e.event_time.ToString("yyyy-MM-dd HH:mm:ss.fff"),
                     CommondType = e.command_type,
                     ServerId = e.server_id,
                     ThreadId = e.thread_id,
@@ -83,12 +74,91 @@ namespace Ade.Tools.Controllers
                 }
             });
 
+
             return new JsonResult(logItems);
+        }
+
+        public string On()
+        {
+            using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
+            {
+                string sql = "set global log_output='table';set global general_log=on; repair table mysql.general_log;";
+                Dapper.SqlMapper.Execute(mySqlConnection, sql);
+            }
+
+            return "ok";
+        }
+
+        public string Off()
+        {
+            using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
+            {
+                string sql = "set global general_log=off;";
+                Dapper.SqlMapper.Execute(mySqlConnection, sql);
+            }
+
+            return "ok";
+        }
+
+        public string Clear()
+        {
+            using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
+            {
+                string sql = $@"
+                                SET GLOBAL general_log = 'OFF';
+                                RENAME TABLE general_log TO general_log_temp;
+                                DELETE FROM `general_log_temp`;
+                                RENAME TABLE general_log_temp TO general_log;
+                                SET GLOBAL general_log = 'ON';
+                                ";
+
+                Dapper.SqlMapper.Execute(mySqlConnection, sql);
+            }
+
+            return "ok";
         }
 
         public IActionResult Index()
         {
             return View();
+        }
+
+        private List<string> GetTableNames()
+        {
+            MemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions());
+            var cacheKey = "MySqlProfile_TableNames";
+
+            List<string> tableNames = memoryCache.Get <List<string>>(cacheKey);
+
+            if (tableNames != null)
+            {
+                return tableNames;
+            }
+
+            string[] traceDbs = Configuration["TraceDatabaseNames"].Split(",");
+            string sqlTables = "SELECT distinct TABLE_NAME FROM information_schema.columns";
+
+            foreach (var db in traceDbs)
+            {
+                if (!sqlTables.Contains("WHERE"))
+                {
+                    sqlTables += " WHERE table_schema='" + db + "'";
+                }
+                else
+                {
+                    sqlTables += " OR table_schema='" + db + "'";
+                }
+            }
+
+            using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
+            {
+                //  WHERE table_schema='mice'
+                tableNames = Dapper.SqlMapper.Query<string>(mySqlConnection, sqlTables).ToList();
+            }
+
+            memoryCache.Set(cacheKey, tableNames, TimeSpan.FromMinutes(30));
+
+            return tableNames;
         }
     }
 }

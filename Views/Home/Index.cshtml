@@ -1,68 +1,83 @@
 ﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <meta charset="utf-8">
+    <title>MYSQL执行跟踪</title>
     <link href="~/css/bootstrap.min.css" rel="stylesheet" />
-    <script src="~/js/jquery-3.3.1.min.js"></script>
     <script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
-    <script>
-
-        //var timer;
-        new Vue({
-            el: '#app',
-            data: {
-                sites: [
-                    { name: 'Runoob' },
-                    { name: 'Google' },
-                    { name: 'Taobao' }
-                ]
-            }
-        })
-
-        $(function () {
-            //$("input[name='copy']").zclip({
-            //    //记得把这个文件引入
-            //    path: 'ZeroClipboard.swf',
-            //    copy: function () {//复制内容
-            //        return $(this).parent('td').val();
-            //    },
-            //    afterCopy: function () {//复制成功
-            //        alert("复制成功")
-            //    }
-            //});
-
-            timer = setInterval(trace, 5000);
-        });
-
-        function trace() {
-            $.post("home/start", null, function (result) {
-                datas = result;
-            });
-        }
-
-        function pause() {
-            clearInterval(timer);
-        }
-
-            //function startStop() {
-            //    var text = $("#btnStartStop").val();
-            //    if (text == "停止") {
-            //        clearTimeout(timer);
-            //        $("#btnStartStop").val("开始");
-            //    }
-            //    else {
-            //        window.location.reload();
-            //    }
-            //}
-
-    </script>
+    <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
 </head>
 <body>
     <div id="app">
-        <ol>
-            <li v-for="site in sites">
-                {{ site.name }}
-            </li>
-        </ol>
+        <hr />
+        &nbsp;&nbsp;&nbsp;&nbsp;<input id="btnStart" class="btn btn-primary" type="button" value="开始" v-show="startShow" v-on:click="start" />
+        &nbsp;&nbsp;&nbsp;&nbsp;<input id="btnPause" class="btn btn-primary" type="button" value="暂停" v-show="pauseShow" v-on:click="pause" />
+        <hr />
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>执行语句</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="log in logs">
+                        <td>
+                            {{log.time}}
+                        </td>
+                        <td>
+                            @*<input class="btn btn-danger" type="button" value="复制" name="copy" />*@
+                            {{log.sql}}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <script>
+
+        new Vue({
+            el: '#app',
+            data: {
+                startShow: true,
+                pauseShow: false,
+                logs: [
+                    { time: '',sql:'' }
+                ]
+            },
+            methods: {
+                start: function () { 
+                    this.timer = setInterval(this.trace, 5000);
+                    this.pauseShow = true;
+                    this.startShow = false;
+                },
+                pause: function () { 
+                    clearInterval(this.timer);
+                    this.pauseShow = false;
+                    this.startShow = true;
+                },
+                trace: function () { 
+                    //发送 post 请求
+                    this.$http.post('/home/start', {}, { emulateJSON: true }).then(function (res) {
+                        this.logs = res.body;
+                    }, function (res) {
+                        console.log(logs);
+                    });
+                }
+            },
+            created: function () {
+               
+            },
+            mounted: function () {
+                
+            },
+            destroyed: function () {
+                clearInterval(this.time)
+            }
+        });
+
+    </script>
 </body>
 </html>
