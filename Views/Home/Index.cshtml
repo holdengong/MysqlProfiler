@@ -8,10 +8,12 @@
     <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
     <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+    <script src="~/js/clipboard.js"></script>
 </head>
 <body>
+    <div id="copy"></div>
     <div id="app">
-
+        <input id="hidCopy" type="hidden" v-model="copy"/>
         <ul id="myTab" class="nav nav-tabs">
             <li class="active">
                 <a href="#trace" data-toggle="tab">
@@ -28,11 +30,12 @@
         <hr />
         <div id="myTabContent" class="tab-content">
             <div id="trace" class="tab-pane fade in active">
-                <div>
-                    &nbsp;&nbsp;&nbsp;&nbsp;<input id="btnStart" class="btn btn-primary" type="button" value="开始" v-show="startShow" v-on:click="start" />
-                    &nbsp;&nbsp;&nbsp;&nbsp;<input id="btnPause" class="btn btn-primary" type="button" value="暂停" v-show="pauseShow" v-on:click="pause" />
-                    &nbsp;&nbsp;&nbsp;&nbsp;<input id="btnClear" class="btn btn-primary" type="button" value="清空" v-show="clearShow" v-on:click="clear" />
+                <div style="margin-left:30px">
+                    <button type="button" class="btn btn-primary" v-show="startShow" v-on:click="start">开始</button>
+                    <button type="button" class="btn btn-primary" v-show="pauseShow" v-on:click="pause">暂停</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-primary" v-show="clearShow" v-on:click="clear">清空</button>
                 </div>
+
                 <hr />
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">
@@ -43,12 +46,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="log in logs">
+                            <tr v-for="(log,index) in logs">
                                 <td>
                                     {{log.time}}
                                 </td>
                                 <td>
-                                    @*<input class="btn btn-danger" type="button" value="复制" name="copy" />*@
+                                   <button class="btn" v-on:click="copy(log.sql)">复制</button>
                                     {{log.sql}}
                                 </td>
                             </tr>
@@ -76,7 +79,6 @@
                                     {{query.queryTime}}
                                 </td>
                                 <td>
-                                    @*<input class="btn btn-danger" type="button" value="复制" name="copy" />*@
                                     {{query.lockTime }}
                                 </td>
                                 <td>
@@ -99,55 +101,97 @@
         </div>
     </div>
 
-        <script>
+    <script>
 
-            new Vue({
-                el: '#app',
-                data: {
-                    startShow: true,
-                    pauseShow: false,
-                    clearShow: true,
-                    logs: [],
-                    slowQuerys: []
+        var vueApp = new Vue({
+            el: '#app',
+            data: {
+                startShow: true,
+                pauseShow: false,
+                clearShow: true,
+                logs: [],
+                slowQuerys: [],
+                copyText:""
+            },
+            methods: {
+                start: function () {
+                    this.timer = setInterval(this.trace, 5000);
+                    this.pauseShow = true;
+                    this.startShow = false;
                 },
-                methods: {
-                    start: function () {
-                        this.timer = setInterval(this.trace, 5000);
-                        this.pauseShow = true;
-                        this.startShow = false;
-                    },
-                    pause: function () {
-                        clearInterval(this.timer);
-                        this.pauseShow = false;
-                        this.startShow = true;
-                    },
-                    clear: function () {
-                        this.logs = null;
-                    },
-                    trace: function () {
-                        //发送 post 请求
-                        this.$http.post('/home/start', {}, { emulateJSON: true }).then(function (res) {
-                            this.logs = res.body;
-                        }, function (res) {
-                            console.log(logs);
-                        });
-                    }
+                pause: function () {
+                    clearInterval(this.timer);
+                    this.pauseShow = false;
+                    this.startShow = true;
                 },
-                created: function () {
+                clear: function () {
 
-                },
-                mounted: function () {
-                    this.$http.post('/home/slow', {}, { emulateJSON: true }).then(function (res) {
-                        this.slowQuerys = res.body;
+                    this.logs = null;
+
+                    this.$http.post('/home/clear', {}, { emulateJSON: true }).then(function (res) {
+                        console.log("日志清除成功！");
                     }, function (res) {
-                        console.log(this.slowQuerys);
+                    });
+
+                    this.logs = null;
+                },
+                trace: function () {
+                    //发送 post 请求
+                    this.$http.post('/home/start', {}, { emulateJSON: true }).then(function (res) {
+                        this.logs = res.body;
+                    }, function (res) {
+                        console.log(logs);
                     });
                 },
-                destroyed: function () {
-                    clearInterval(this.time)
-                }
-            });
+                copy: function (text) {
+                    var textArea = document.createElement("textarea");
 
-        </script>
+                    textArea.style.position = 'fixed';
+                    textArea.style.top = 0;
+                    textArea.style.left = 0;
+                    
+                    textArea.style.width = '2em';
+                    textArea.style.height = '2em';
+
+                    textArea.style.padding = 0;
+
+                    textArea.style.border = 'none';
+                    textArea.style.outline = 'none';
+                    textArea.style.boxShadow = 'none';
+
+                    textArea.style.background = 'transparent';
+
+                    textArea.value = text;
+
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+
+                    try {
+                        var successful = document.execCommand('copy');
+                        var msg = successful ? 'successful' : 'unsuccessful';
+                        console.log('Copying text command was ' + msg);
+                    } catch (err) {
+                        console.log('Oops, unable to copy');
+                    }
+
+                    document.body.removeChild(textArea);
+                }
+            },
+            created: function () {
+
+            },
+            mounted: function () {
+                this.$http.post('/home/slow', {}, { emulateJSON: true }).then(function (res) {
+                    this.slowQuerys = res.body;
+                }, function (res) {
+                    console.log(this.slowQuerys);
+                });
+            },
+            destroyed: function () {
+                clearInterval(this.time)
+            }
+        });
+    </script>
 </body>
 </html>

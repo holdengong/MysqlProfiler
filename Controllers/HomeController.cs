@@ -33,8 +33,6 @@ namespace Ade.Tools.Controllers
                 StartTime = DateTime.Now;
             }
 
-            int size = int.Parse(Configuration["Size"]);
-
             string[] blackList = Configuration["Blacklist"].Split(",");
 
             List<string> tableNames = GetTableNames();
@@ -50,7 +48,6 @@ namespace Ade.Tools.Controllers
                 logItemDTOs = Dapper.SqlMapper.Query<LogItemDTO>(mySqlConnection, $" select * from mysql.general_log " +
                      $"where event_time>'{StartTime.ToString("yyyy-MM-dd HH:mm:ss")}' " +
                      $"order by event_time desc ")
-                     //+ $"limit {size} "
                      .ToList();
             }
 
