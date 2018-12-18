@@ -65,8 +65,8 @@
                     <table class="table table-striped table-bordered">
                         <thead>
                             <tr>
-                                <th>执行时长(时：分：秒，毫秒)</th>
-                                <th>锁定时长(时：分：秒，毫秒)</th>
+                                <th>执行时长(时:分:秒.毫秒)</th>
+                                <th>锁定时长(时:分:秒.毫秒)</th>
                                 <th>开始时间</th>
                                 <th>数据库</th>
                                 <th>操作者</th>
@@ -115,7 +115,7 @@
             },
             methods: {
                 start: function () {
-                    this.timer = setInterval(this.trace, 5000);
+                    this.timer = setInterval(this.trace, 3000);
                     this.pauseShow = true;
                     this.startShow = false;
                 },
@@ -170,7 +170,11 @@
                     try {
                         var successful = document.execCommand('copy');
                         var msg = successful ? 'successful' : 'unsuccessful';
-                        console.log('Copying text command was ' + msg);
+
+                        if (msg == "successful") { 
+                            //alert("复制成功！");
+                        }
+
                     } catch (err) {
                         console.log('Oops, unable to copy');
                     }

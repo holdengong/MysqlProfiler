@@ -63,8 +63,8 @@ namespace Ade.Tools.Controllers
                     Sql = System.Text.Encoding.Default.GetString(e.argument)
                 };
 
-                if (tableNames.Any(a => logItem.Sql.Contains(a))
-                && !blackList.Any(b => logItem.Sql.Contains(b))
+                if (tableNames.Any(a => logItem.Sql.Contains(a,StringComparison.OrdinalIgnoreCase))
+                && !blackList.Any(b => logItem.Sql.Contains(b, StringComparison.OrdinalIgnoreCase))
                 )
                 {
                     logItems.Add(logItem);
