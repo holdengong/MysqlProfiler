@@ -1,6 +1,8 @@
-# MysqlProfiler
-a simple tool to trace mysql querys intime just like sql server profiler...
+V1.1
+1、支持一键复制SQL语句
+2、增加清除按钮，一键从库中清除所有普通查询数据
 
+V1.0
 #  简介
 之前的工作一直使用的SQL SERVER, 用过的都知道，SQL SERVER有配套的SQL跟踪工具SQL Profiler，开发或者定位BUG过程中，可以在操作页面的时候，实时查看数据库执行的SQL语句，十分方便。最近的项目使用MySQL，没有类似的功能，感觉到十分的不爽，网上也没有找到合适的免费工具，所以自己研究做了一个简单工具。
 ###### 功能
