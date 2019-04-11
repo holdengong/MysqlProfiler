@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 
-namespace Ade.Tools
+namespace MysqlProfiler
 {
     public class Program
     {
@@ -25,15 +25,15 @@ namespace Ade.Tools
                 var configuration = services.GetRequiredService<IConfiguration>();
 
                 var connStr = configuration["Sql:DefaultConnection"];
-                var clearIntervalHours = int.Parse(configuration["ClearIntervalHours"]);
+                var clearIntervalMinutes = int.Parse(configuration["ClearIntervalMinutes"]);
 
-                AutoClearLog(connStr, clearIntervalHours);
+                AutoClearLog(connStr, clearIntervalMinutes);
             }
 
             host.Run();
         }
 
-        private static void AutoClearLog(string connStr,int clearIntervalHours)
+        private static void AutoClearLog(string connStr,int clearIntervalMinutes)
         {
             var timer = new Timer(
                   x =>
@@ -50,7 +50,7 @@ namespace Ade.Tools
 
                           Dapper.SqlMapper.Execute(mySqlConnection, sql);
                       }
-                  }, null, 0, (int)(TimeSpan.FromHours(clearIntervalHours).TotalMilliseconds));
+                  }, null, 0, (int)(TimeSpan.FromMinutes(clearIntervalMinutes).TotalMilliseconds));
 
         }
 

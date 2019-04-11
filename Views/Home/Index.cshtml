@@ -32,9 +32,11 @@
                 <div style="margin-left:30px">
                     <button type="button" class="btn btn-primary" v-show="startShow" v-on:click="start">开始</button>
                     <button type="button" class="btn btn-primary" v-show="pauseShow" v-on:click="pause">暂停</button>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-primary" v-show="clearShow" v-on:click="clear">清空</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <button type="button" class="btn btn-primary" v-show="clearShow" v-on:click="clear">清空</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <input type="text" name="username" width="200" placeholder="关键词" v-model="keyword">
                 </div>
-
                 <hr />
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered">
@@ -108,6 +110,7 @@
                 startShow: true,
                 pauseShow: false,
                 clearShow: true,
+                keyword:"",
                 logs: [],
                 slowQuerys: [],
                 copyText:""
@@ -136,7 +139,11 @@
                 },
                 trace: function () {
                     //发送 post 请求
-                    this.$http.post('/home/trace', {}, { emulateJSON: true }).then(function (res) {
+                    this.$http.post('/home/trace',
+                    {
+                        keyword:this.keyword
+                    }, 
+                    { emulateJSON: true }).then(function (res) {
                         this.logs = res.body;
                     }, function (res) {
                         console.log(logs);

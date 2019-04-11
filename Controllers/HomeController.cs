@@ -1,4 +1,4 @@
-﻿using Ade.Tools.Models;
+﻿using MysqlProfiler.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -8,8 +8,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using MySql.Data.MySqlClient;
 using Microsoft.Extensions.Caching.Memory;
+using MysqlProfiler.Models;
 
-namespace Ade.Tools.Controllers
+namespace MysqlProfiler.Controllers
 {
     public class HomeController : Controller
     {
@@ -27,7 +28,7 @@ namespace Ade.Tools.Controllers
         public string ConnStr { get; set; }
 
         [Route("home/trace")]
-        public JsonResult Trace()
+        public JsonResult Trace(TraceRequest request)
         {
             On();
 
@@ -70,7 +71,17 @@ namespace Ade.Tools.Controllers
                 && !blackList.Any(b => logItem.Sql.Contains(b, StringComparison.OrdinalIgnoreCase))
                 )
                 {
-                    logItems.Add(logItem);
+                    if (!string.IsNullOrWhiteSpace(request.Keyword))
+                    {
+                        if (logItem.Sql.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase))
+                        {
+                            logItems.Add(logItem);
+                        }
+                    }
+                    else
+                    {
+                        logItems.Add(logItem);
+                    }
                 }
             });
 

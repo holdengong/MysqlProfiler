@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
-namespace Ade.Tools.Models
+namespace MysqlProfiler.Models
 {
     public class SlowQueryDTO
     {
