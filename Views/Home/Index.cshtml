@@ -136,7 +136,7 @@
                 },
                 trace: function () {
                     //发送 post 请求
-                    this.$http.post('/home/start', {}, { emulateJSON: true }).then(function (res) {
+                    this.$http.post('/home/trace', {}, { emulateJSON: true }).then(function (res) {
                         this.logs = res.body;
                     }, function (res) {
                         console.log(logs);

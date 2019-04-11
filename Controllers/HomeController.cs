@@ -26,8 +26,11 @@ namespace Ade.Tools.Controllers
         public static List<string> TableNames { get; set; }
         public string ConnStr { get; set; }
 
-        public JsonResult Start()
+        [Route("home/trace")]
+        public JsonResult Trace()
         {
+            On();
+
             if (StartTime == DateTime.MinValue)
             {
                 StartTime = DateTime.Now;
@@ -75,6 +78,7 @@ namespace Ade.Tools.Controllers
             return new JsonResult(logItems);
         }
 
+        [Route("home/slow")]
         public JsonResult Slow()
         {
             List<SlowQuery> slowQueries = new List<SlowQuery>();
@@ -102,6 +106,7 @@ namespace Ade.Tools.Controllers
             return new JsonResult(slowQueries);
         }
 
+        [Route("home/on")]
         public string On()
         {
             using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
@@ -113,6 +118,7 @@ namespace Ade.Tools.Controllers
             return "ok";
         }
 
+        [Route("home/off")]
         public string Off()
         {
             using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
@@ -124,6 +130,7 @@ namespace Ade.Tools.Controllers
             return "ok";
         }
 
+        [Route("home/clear")]
         public string Clear()
         {
             using (MySqlConnection mySqlConnection = new MySqlConnection(this.ConnStr))
